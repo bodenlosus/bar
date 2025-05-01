@@ -1,0 +1,13 @@
+calendar {
+    border-radius: 8px;
+    padding: 4px;
+    border: none;
+}
+
+calendar grid label {
+    margin: 4px;
+    padding: 4px;
+}
+.date-display {
+    font-size: x-large;
+}

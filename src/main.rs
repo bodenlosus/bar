@@ -1,11 +1,13 @@
 mod bar;
 mod events;
+mod notification;
+mod notification_server;
 mod utils;
-
 use adw::prelude::*;
 use async_channel::{self};
 use glib::{self};
 use gtk::{self, gio::prelude::ApplicationExt};
+
 
 pub const ID: &str = "io.github.bodenlosus.panel";
 
@@ -35,22 +37,22 @@ fn main() {
 
         let mut bar = bar::Bar::new(app, tx);
         bar.show();
-        utils::set_interval(
-            move || {
-                let dt = match glib::DateTime::now_local() {
-                    Ok(dt) => dt,
-                    Err(e) => {
-                        eprintln!("Error retrieving DateTime: {e:?}");
-                        return glib::ControlFlow::Continue;
-                    }
-                };
-                if let Some(module) = bar.modules.time.as_mut() {
-                    module.set_datetime(&dt);
-                }
-                glib::ControlFlow::Continue
-            },
-            250,
-        );
+        // utils::set_interval(
+        //     move || {
+        //         let dt = match glib::DateTime::now_local() {
+        //             Ok(dt) => dt,
+        //             Err(e) => {
+        //                 eprintln!("Error retrieving DateTime: {e:?}");
+        //                 return glib::ControlFlow::Continue;
+        //             }
+        //         };
+        //         if let Some(module) = bar.modules.time.as_mut() {
+        //             module.set_datetime(&dt);
+        //         }
+        //         glib::ControlFlow::Continue
+        //     },
+        //     250,
+        // );
     });
     app.run();
 }

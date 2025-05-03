@@ -1,13 +1,36 @@
 calendar {
-    border-radius: 8px;
-    padding: 4px;
+    border-radius: 10px;
+    padding: 5px;
     border: none;
 }
 
 calendar grid label {
-    margin: 4px;
-    padding: 4px;
+    margin: 5px;
+    padding: 5px;
 }
 .date-display {
-    font-size: x-large;
+    padding: 5px;
+    font-weight: bolder;
+}
+
+.notification-list {
+    background-color: transparent;
+}
+.notification-list box {
+    padding: 5px;
+    border-radius: 10px;
+    background-color: var(--view-bg-color);
+}
+
+.notification-list row {
+    margin: 0px 0px 5px 0px
+}
+.notification-list row:nth-last-of-type(1) {
+    margin-bottom: 0px;
+}
+
+.notification-list row 
+
+.notification-list row:hover {
+    background-color: transparent;
 }

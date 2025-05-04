@@ -1,6 +1,4 @@
-use std::collections::HashSet;
 
-use glib::variant::{FromVariant, ToVariant};
 
 use crate::notification_server::Notification;
 mod imp {

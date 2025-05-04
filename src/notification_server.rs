@@ -1,7 +1,7 @@
 use async_channel::Sender;
+use glib::variant::ToVariant;
 use glib::{self};
 use gtk::gio;
-use std::collections::{HashMap, HashSet};
 use std::{cell::RefCell, fmt::Debug, rc::Rc};
 
 use crate::events::{NotificationEvent, UIEvent};
@@ -150,14 +150,22 @@ async fn handle_method_call(
             invocation.return_value(Some(&server_info));
         }
         "Notify" => {
+
+
+            println!("Unwrap mistt");
+
             let app_name = parameters.child_get::<String>(0);
             let replaces_id = parameters.child_get::<u32>(1);
             let app_icon = parameters.child_get::<String>(2);
             let summary = parameters.child_get::<String>(3);
             let body = parameters.child_get::<String>(4);
             let actions = parameters.child_get::<Vec<String>>(5);
-            let hints = parameters.child_get::<glib::Variant>(6);
+
+            let hints = parameters.child_get::<glib::VariantDict>(6);
+
             let expire_timeout = parameters.child_get::<i32>(7);
+
+            let hints = hints.to_variant();
 
             let current_id = if replaces_id == 0 {
                 let mut id = next_id.borrow_mut();
@@ -183,9 +191,12 @@ async fn handle_method_call(
             let invoc_return = glib::Variant::tuple_from_iter(&[glib::Variant::from(current_id)]);
 
             invocation.return_value(Some(&invoc_return));
+
+
             let event = UIEvent::Notification(NotificationEvent::NewNotification(
                 notification,
             ));
+
             if let Err(err) = sender.send(event).await {
                 println!("Error sending notification: {}", err);
             }

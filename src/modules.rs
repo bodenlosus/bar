@@ -1,23 +1,32 @@
+use crate::notification_server::Notification;
 use crate::{notification::NotificationObject, utils::unwrap_or_return};
 use cascade::cascade;
 use glib::object::{Cast, IsA};
 use gtk::prelude::*;
 use gtk::{self, gio};
-use std::{cell::RefCell, collections::HashMap, rc::Rc};
+use std::any::Any;
+use std::{cell::RefCell, rc::Rc};
 
-enum ModuleType {
+#[derive(Debug, Hash, PartialEq, Eq, Clone, Copy)]
+pub enum ModuleType {
     Time,
     Notifications,
     Stack,
 }
 
-pub trait Module {
+pub trait Module: Any {
     fn name(&self) -> &str;
     fn get_widget(&self) -> gtk::Widget;
     fn get_button(&self) -> Option<gtk::MenuButton> {
         None
     }
+    fn get_type (&self) -> ModuleType;
+    fn as_any(&self) -> &dyn Any;
+    fn as_any_mut(&mut self) -> &mut dyn Any;
+    fn into_any(self: Box<Self>) -> Box<dyn Any>; 
 }
+
+
 
 pub struct ModuleStack {
     modules: RefCell<Vec<Rc<dyn Module>>>,
@@ -68,6 +77,19 @@ impl Module for ModuleStack {
         button.set_child(Some(&label));
         Some(button)
     }
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+    fn as_any_mut(&mut self) -> &mut dyn Any {
+        self
+    }
+    fn into_any(self: Box<Self>) -> Box<dyn Any> {
+        self
+    }
+    fn get_type(&self) -> ModuleType {
+        ModuleType::Stack
+    }    
+
 }
 
 pub struct TimeModule {
@@ -131,6 +153,19 @@ impl Module for TimeModule {
 
         container.upcast::<gtk::Widget>()
     }
+    fn get_type (&self) -> ModuleType{
+        ModuleType::Time
+    }
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+    fn as_any_mut(&mut self) -> &mut dyn Any {
+        self
+    }
+    fn into_any(self: Box<Self>) -> Box<dyn Any> {
+        self
+    }
+    
 }
 
 #[derive(Clone)]
@@ -147,6 +182,11 @@ impl Notifications {
             widget: RefCell::new(None),
             store,
         }
+    }
+    pub fn add_notification(&self, n: Notification) {
+        let notification = NotificationObject::new();
+        notification.set(n);
+        self.store.append(&notification);
     }
 }
 
@@ -218,6 +258,18 @@ impl Module for Notifications {
         *widget = Some(container.clone());
 
         container.upcast::<gtk::Widget>()
+    }
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+    fn as_any_mut(&mut self) -> &mut dyn Any {
+        self
+    }
+    fn into_any(self: Box<Self>) -> Box<dyn Any> {
+        self
+    }
+    fn get_type(&self) -> ModuleType {
+        ModuleType::Notifications
     }
 }
 

@@ -6,9 +6,9 @@ use std::time;
 
 
 
-use crate::events::UIEvent;
+use crate::events::{NotificationEvent, UIEvent};
 use crate::notification::NotificationObject;
-use crate::notification_server;
+use crate::{modules, notification_server};
 use crate::utils::{self, unwrap_or_return};
 
 use adw::prelude::AdwApplicationWindowExt;
@@ -19,7 +19,7 @@ use glib::{self};
 use gtk::{gio, Popover};
 use gtk::{self, prelude::*};
 use layer_shell::{self, Edge, Layer, LayerShell};
-use crate::modules::Module;
+use crate::modules::{Module, ModuleType};
 
 pub enum Align {
     Start = 0,
@@ -33,7 +33,7 @@ pub struct Bar {
     // pub modules: Modules,
     pub s_ui: Sender<UIEvent>,
     pub r_ui: Receiver<UIEvent>,
-    pub modules: RefCell<HashMap<String, Rc<dyn Module>>>,
+    pub modules: RefCell<HashMap<ModuleType, Rc<dyn Module>>>,
 }
 impl Bar {
     pub fn new(app: &gtk::Application, s_ui: Sender<UIEvent>, r_ui: Receiver<UIEvent>) -> Self {
@@ -70,51 +70,68 @@ impl Bar {
         }
     }
 
-    pub fn get_module(&self, name: &str) -> Option<Rc<dyn Module>> {
-        self.modules.borrow().get(name).cloned()
-    }
-
-    pub fn add_module<T, M>(&self, name: T, module: M, align: Align)
+    pub fn add_module<M>(&self, module: M, align: Align, add_widget: bool)
     where 
-        T: Into<String>,
         M: Module + 'static,
       {
-        let name = name.into();
         let module = Rc::new(module);
         let widget = create_module_container(module.clone());
+
+        self.modules
+            .borrow_mut()
+            .insert(module.get_type(), module);
+        
+        if !add_widget {
+            return;
+        }
         match align {
             Align::Start => self.layout.0.append(&widget),
             Align::Center => self.layout.1.append(&widget),
             Align::End => self.layout.2.append(&widget),
-        }
-
-        self.modules
-            .borrow_mut()
-            .insert(name.clone(), module);
-        
+        }    
     }
-
+    pub fn get_module(&self, module_type: ModuleType) -> Option<Rc<dyn Module>> {
+        self.modules.borrow().get(&module_type).cloned()
+    }
     pub fn event_loop(&mut self) {
         let s_ui = self.s_ui.clone();
         let r_ui = self.r_ui.clone();
 
-        let time_mod = self.get_module("time");
+        let not_mod = self.get_module(ModuleType::Notifications);
 
         glib::MainContext::default().spawn_local(async move {
+            let not_mod = not_mod.clone();
             while let Ok(event) = r_ui.recv().await {
                 match event {
-                    UIEvent::Notification(notification) => {
-                        if let Some(ref module) = time_mod {
-                        }
+                    UIEvent::Notification(event) => {
+                        handle_not_event(event, not_mod.clone());
                     }
                 }
-            }
+            };
         });
     }
 
     pub fn show(&self) {
         self.window.present()
     }
+}
+
+fn handle_not_event(
+    event: NotificationEvent,
+    module: Option<Rc<dyn Module>>,
+) {
+    let module = unwrap_or_return!(module, Option);
+    let module = unwrap_or_return!(
+        module.as_any().downcast_ref::<crate::modules::Notifications>(), Option
+    );
+
+    match event {
+        NotificationEvent::NewNotification(notification) => {
+            println!("New notification: {:?}", notification);
+            module.add_notification(notification);
+        }
+        _ => {}
+    };
 }
 
 fn create_module_container<M>(module: Rc<M>) -> gtk::MenuButton

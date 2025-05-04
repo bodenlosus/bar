@@ -22,7 +22,7 @@
       in {
         # packages.default = pkgs.callPackage ./. {};  
         devShells.default = pkgs.mkShell {
-          shellHook = "";
+          shellHook = "export GSK_RENDERER=cairo";
           packages = with pkgs; [
             gtk4
             gtk3

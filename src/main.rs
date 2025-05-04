@@ -4,7 +4,6 @@ mod notification;
 mod notification_server;
 mod utils;
 mod modules;
-use std::time;
 
 use gtk::prelude::*;
 use async_channel::{self};
@@ -48,19 +47,20 @@ fn main() {
         let notification_mod = modules::Notifications::new();
         stack.add_module(notification_mod);
 
-        bar.add_module("time", stack, bar::Align::Center);
+        bar.add_module(stack, bar::Align::Center, false);
+        bar.add_module(time_mod, , add_widget);
         bar.event_loop();
         bar.show();
 
-        // let not_server = async move {
-        //     let not_server = notification_server::NotificationServer::new(s_ui.clone());
-        //     if let Err(e) = not_server.connect_to_dbus() {
-        //         eprintln!("Error connecting to D-Bus: {e:?}");
-        //     }
-        // };
-        // //spawn the notification server in a seperate thread
+        let not_server = async move {
+            let not_server = notification_server::NotificationServer::new(s_ui.clone());
+            if let Err(e) = not_server.connect_to_dbus() {
+                eprintln!("Error connecting to D-Bus: {e:?}");
+            }
+        };
+        //spawn the notification server in a seperate thread
 
-        // glib::MainContext::default().spawn(not_server);
+        glib::MainContext::default().spawn(not_server);
 
     });
     app.run();

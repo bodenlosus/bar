@@ -26,3 +26,26 @@ pub fn set_interval<T: FnMut() -> glib::ControlFlow + 'static>(
         func()
     })
 }
+
+macro_rules! unwrap_or_return {
+
+    ($expression:expr, Result) => {
+        match $expression {
+            Ok(value) => value,
+            Err(err) => {
+                println!("Error: {}", err);
+                return;
+            }
+        }      
+    };
+    ($expression:expr, Option) => {
+        match $expression {
+            Some(value) => value,
+            None => {
+                return;
+            }
+        }      
+    };
+}
+
+pub(crate) use unwrap_or_return;

@@ -3,7 +3,10 @@ mod events;
 mod notification;
 mod notification_server;
 mod utils;
-use adw::prelude::*;
+mod modules;
+use std::time;
+
+use gtk::prelude::*;
 use async_channel::{self};
 use glib::{self};
 use gtk::{self, gio::prelude::ApplicationExt};
@@ -28,31 +31,37 @@ fn main() {
     glib::set_program_name(Some(NAME));
     glib::set_application_name(NAME);
 
-    let app = adw::Application::new(Some(ID), Default::default());
+    let app = gtk::Application::new(Some(ID), Default::default());
     app.connect_startup(|_| {
         load_default_css();
     });
-    app.connect_activate(|app| {
-        let (tx, trx) = async_channel::unbounded::<events::UIEvent>();
+    
 
-        let mut bar = bar::Bar::new(app, tx);
+    app.connect_activate(|app| {
+        let (s_ui, r_ui) = async_channel::unbounded::<events::UIEvent>();
+
+        let mut bar = bar::Bar::new(app, s_ui.clone(), r_ui.clone());
+
+        let stack = modules::ModuleStack::new(gtk::Orientation::Horizontal);
+        let time_mod = modules::TimeModule::new();
+        stack.add_module(time_mod);
+        let notification_mod = modules::Notifications::new();
+        stack.add_module(notification_mod);
+
+        bar.add_module("time", stack, bar::Align::Center);
+        bar.event_loop();
         bar.show();
-        // utils::set_interval(
-        //     move || {
-        //         let dt = match glib::DateTime::now_local() {
-        //             Ok(dt) => dt,
-        //             Err(e) => {
-        //                 eprintln!("Error retrieving DateTime: {e:?}");
-        //                 return glib::ControlFlow::Continue;
-        //             }
-        //         };
-        //         if let Some(module) = bar.modules.time.as_mut() {
-        //             module.set_datetime(&dt);
-        //         }
-        //         glib::ControlFlow::Continue
-        //     },
-        //     250,
-        // );
+
+        // let not_server = async move {
+        //     let not_server = notification_server::NotificationServer::new(s_ui.clone());
+        //     if let Err(e) = not_server.connect_to_dbus() {
+        //         eprintln!("Error connecting to D-Bus: {e:?}");
+        //     }
+        // };
+        // //spawn the notification server in a seperate thread
+
+        // glib::MainContext::default().spawn(not_server);
+
     });
     app.run();
 }

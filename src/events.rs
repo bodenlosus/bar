@@ -1,3 +1,11 @@
+use crate::{notification_server};
+
+#[derive(Debug)]
 pub enum UIEvent {
-    Clicked,
+    Notification(NotificationEvent),
+}
+
+#[derive(Debug)]
+pub enum NotificationEvent {
+    NewNotification(notification_server::Notification),
 }

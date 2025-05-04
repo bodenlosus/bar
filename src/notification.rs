@@ -1,3 +1,7 @@
+use std::collections::HashSet;
+
+use glib::variant::{FromVariant, ToVariant};
+
 use crate::notification_server::Notification;
 mod imp {
     use std::cell::{Cell, RefCell};
@@ -59,7 +63,7 @@ impl NotificationObject {
         self.set_summary(n.summary);
         self.set_body(n.body);
         self.set_actions(n.actions);
-        self.set_hints(n.hints);
+        self.set_hints(glib::VariantDict::new(Some(&n.hints)));
         self.set_expire_timeout(n.expire_timeout);
     }
 
